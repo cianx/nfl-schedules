@@ -1,41 +1,16 @@
 import csv
 import os
-
-
-class Stadiums:
-	def __init__(self, name='2015_NFL_Stadiums.csv'):
-		stadiums = []
-		stadiumMap = {}
-		self.name = name;
-		if(os.path.exists(name)):
-			idx = 0
-			with open(name, 'rU') as csvfile:
-				creader = csv.DictReader(csvfile,  delimiter=',',  quotechar='"');
-				for row in creader:
-					row['Address'] = ",".join([row['StreetAddress'], row['City'], row['State'], row['ZIP']])
-					stadiums.append(row)
-					stadiumMap[row['Team']] = idx
-					idx=idx+1
-			self.stadiums = stadiums
-			self.stadiumMap = stadiumMap
-			
-	def __len__(self):
-		return len(self.stadiums)
-	
-	def __getitem__(self, idx):
-		if isinstance(idx, int):
-			return self.stadiums[idx]
-		else:
-			return self.stadiums[self.stadiumMap[idx]]
-		
-	def __iter__(self):
-		return self.stadiums.__iter__();
+import datetime
+import time
 
 def num(x):
 	try:
 		if x=="":
 			return 0;
-		return float(x)
+		try:
+			return int(x)
+		except:
+			return float(x)
 	except:
 		return 0
 
@@ -98,6 +73,43 @@ class StadiumDistances:
 				cwriter.writerow(self.distances[k])
 		pass;
 	
+	def DriveTime(self, o, d):
+		return self.distances[self.MakeKey(o, d)]['DriveTime']
+	def DriveDistance(self, o, d):
+		return self.distances[self.MakeKey(o, d)]['DriveDistance']
+	def FlightDistance(self, o, d):
+		return self.distances[self.MakeKey(o, d)]['FlightDistance']
+	
+class Stadiums:
+	def __init__(self, name='2015_NFL_Stadiums.csv'):
+		stadiums = []
+		stadiumMap = {}
+		self.name = name;
+		if(os.path.exists(name)):
+			idx = 0
+			with open(name, 'rU') as csvfile:
+				creader = csv.DictReader(csvfile,  delimiter=',',  quotechar='"');
+				for row in creader:
+					row['Address'] = ",".join([row['StreetAddress'], row['City'], row['State'], row['ZIP']])
+					stadiums.append(row)
+					stadiumMap[row['Team']] = idx
+					idx=idx+1
+			self.stadiums = stadiums
+			self.stadiumMap = stadiumMap
+			
+	def __len__(self):
+		return len(self.stadiums)
+	
+	def __getitem__(self, idx):
+		if isinstance(idx, int):
+			return self.stadiums[idx]
+		else:
+			return self.stadiums[self.stadiumMap[idx]]
+		
+	def __iter__(self):
+		return self.stadiums.__iter__();
+	
+
 
 
 class Schedule:
@@ -108,6 +120,20 @@ class Schedule:
 			with open(name, 'rU') as csvfile:
 				creader = csv.DictReader(csvfile,  delimiter=',',  quotechar='"');
 				for row in creader:
+					if 'SeasonWeek' in row:
+						row['SeasonWeek'] = num(row['SeasonWeek'])
+					if 'Date' in row:
+						row['DateString']=row['Date']
+						row['Date'] = datetime.datetime.fromtimestamp(time.mktime(time.strptime(row['Date'], "%m/%d/%y")))
+					row['Tag']="{}@{}".format(row['Away'], row['Home'])
 					schedule.append(row)
 			self.schedule = schedule;
+
+	def GetWeekGames(self, wk):
+		out = []
+		for i in self.schedule:
+			if i['SeasonWeek'] == wk:
+				out.append(i)
+		return out;
+
 
